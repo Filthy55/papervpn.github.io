@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VPN Shield — Защита без границ</title>
+    <style>
+        /* --------------------------------------
+                   БАЗОВЫЕ СБРОСЫ И ШРИФТЫ
+                -------------------------------------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0b0d15;
+            color: #e8edf5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-image: radial-gradient(circle at 20% 30%, #1a1f2e 0%, #0b0d15 80%);
+        }
+
+        /* --------------------------------------
+                   ГЛАВНАЯ КАРТОЧКА
+                -------------------------------------- */
+        .vpn-card {
+            max-width: 540px;
+            width: 100%;
+            background: rgba(20, 25, 40, 0.75);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(100, 210, 255, 0.15);
+            border-radius: 40px;
+            padding: 40px 32px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 80px rgba(0, 180, 255, 0.06);
+            transition: transform 0.25s ease;
+            text-align: center;
+        }
+
+        .vpn-card:hover {
+            transform: scale(1.01);
+        }
+
+        /* --------------------------------------
+                   ЛОГОТИП / ИКОНКА
+                -------------------------------------- */
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(145deg, #1a8cff, #6c5ce7);
+            border-radius: 28px;
+            font-size: 44px;
+            margin-bottom: 20px;
+            box-shadow: 0 12px 32px rgba(30, 144, 255, 0.35);
+        }
+
+        /* --------------------------------------
+                   ЗАГОЛОВКИ
+                -------------------------------------- */
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a0d0ff, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .subhead {
+            font-size: 16px;
+            color: #9aa5c9;
+            margin-bottom: 28px;
+            font-weight: 300;
+            letter-spacing: 0.3px;
+        }
+
+        /* --------------------------------------
+                   СТАТИСТИКА (онлайн-пользователи)
+                -------------------------------------- */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #64d2ff;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #7b88b0;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-number .plus {
+            font-size: 18px;
+            color: #6c5ce7;
+        }
+
+        /* --------------------------------------
+                   КНОПКА КОПИРОВАНИЯ КЛЮЧА
+                -------------------------------------- */
+        .key-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed rgba(100, 210, 255, 0.2);
+            border-radius: 60px;
+            padding: 12px 18px 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+
+        .key-section .key-label {
+            font-size: 14px;
+            color: #9aa5c9;
+        }
+
+        .key-section .key-value {
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            font-weight: 600;
+            color: #b7c9ff;
+            letter-spacing: 1px;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            background: rgba(100, 210, 255, 0.1);
+            border: none;
+            color: #64d2ff;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            white-space: nowrap;
+        }
+
+        .copy-btn:hover {
+            background: rgba(100, 210, 255, 0.2);
+            color: #a0e0ff;
+        }
+
+        .copy-btn.copied {
+            background: rgba(0, 230, 118, 0.15);
+            color: #69db7c;
+        }
+
+        /* --------------------------------------
+                   ФОРМА ПОДПИСКИ
+                -------------------------------------- */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 6px;
+        }
+
+        .form-group input {
+            padding: 16px 22px;
+            border-radius: 60px;
+            border: 1px solid rgba(100, 210, 255, 0.15);
+            background: rgba(255, 255, 255, 0.04);
+            color: #e8edf5;
+            font-size: 16px;
+            outline: none;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input::placeholder {
+            color: #5e6d92;
+        }
+
+        .form-group input:focus {
+            border-color: #6c5ce7;
+            box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.2);
+        }
+
+        .form-group button {
+            padding: 16px 22px;
+            border-radius: 60px;
+            border: none;
+            background: linear-gradient(135deg, #1a8cff, #6c5ce7);
+            color: white;
+            font-weight: 700;
+            font-size: 17px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.25s;
+            box-shadow: 0 8px 24px rgba(30, 144, 255, 0.25);
+        }
+
+        .form-group button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(30, 144, 255, 0.35);
+        }
+
+        .form-group button:active {
+            transform: scale(0.97);
+        }
+
+        /* --------------------------------------
+                   СООБЩЕНИЕ ОБ УСПЕХЕ
+                -------------------------------------- */
+        .success-msg {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 40px;
+            background: rgba(0, 230, 118, 0.08);
+            border: 1px solid rgba(0, 230, 118, 0.15);
+            color: #69db7c;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-msg.show {
+            display: block;
+        }
+
+        /* --------------------------------------
+                   ПОДВАЛ
+                -------------------------------------- */
+        .footer {
+            margin-top: 28px;
+            font-size: 13px;
+            color: #4b587a;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            padding-top: 24px;
+        }
+
+        .footer a {
+            color: #7b88b0;
+            text-decoration: none;
+            border-bottom: 1px dotted #3d4a6b;
+        }
+
+        .footer a:hover {
+            color: #a0d0ff;
+        }
+
+        /* --------------------------------------
+                   АДАПТИВ ДЛЯ ТЕЛЕФОНОВ
+                -------------------------------------- */
+        @media (max-width: 480px) {
+            .vpn-card {
+                padding: 28px 18px;
+                border-radius: 28px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            .key-section {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+                gap: 8px;
+                padding: 16px;
+            }
+
+            .key-section .key-value {
+                font-size: 13px;
+            }
+
+            .stats {
+                gap: 20px;
+            }
+
+            .stat-number {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .vpn-card {
+                padding: 20px 14px;
+            }
+            .logo {
+                width: 64px;
+                height: 64px;
+                font-size: 34px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="vpn-card">
+
+        <!-- Иконка -->
+        <div class="logo">🛡️</div>
+
+        <!-- Заголовки -->
+        <h1>VPN Shield</h1>
+        <p class="subhead">Мгновенная защита. Никаких логов. Без ограничений.</p>
+
+        <!-- Статистика -->
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-number" id="onlineCount">0</span>
+                <span class="stat-label">🟢 онлайн</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">84</span>
+                <span class="stat-label">🌍 сервера</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">12<span class="plus">+</span></span>
+                <span class="stat-label">стран</span>
+            </div>
+        </div>
+
+        <!-- Секция с ключом + кнопка копирования -->
+        <div class="key-section">
+            <span class="key-label">🔑 ваш ключ доступа</span>
+            <span class="key-value" id="vpnKey">vpn-free-2026</span>
+            <button class="copy-btn" id="copyKeyBtn">📋 Копировать</button>
+        </div>
+
+        <!-- Форма для email -->
+        <form class="form-group" id="subscribeForm">
+            <input type="email" placeholder="Введите email для доступа" required id="emailInput" />
+            <button type="submit">🚀 Получить доступ</button>
+        </form>
+
+        <!-- Сообщение об успехе -->
+        <div class="success-msg" id="successMsg">
+            ✅ Готово! Ссылка для скачивания отправлена на вашу почту.
+        </div>
+
+        <!-- Подвал -->
+        <div class="footer">
+            🔒 Без логов • Шифрование AES-256 • <a href="#">Политика конфиденциальности</a>
+        </div>
+    </div>
+
+    <script>
+        // ------------------------------------------------
+        // 1. АНИМИРОВАННЫЙ СЧЁТЧИК ОНЛАЙН-ПОЛЬЗОВАТЕЛЕЙ
+        // ------------------------------------------------
+        const onlineEl = document.getElementById('onlineCount');
+        let target = 0;
+        let current = 0;
+
+        // Каждые 3–6 секунд добавляем случайное число (имитация живого трафика)
+        function updateOnline() {
+            // Случайное число от 1 до 7
+            const increment = Math.floor(Math.random() * 7) + 1;
+            target += increment;
+            // Если стало слишком много — сбрасываем немного (реалистично)
+            if (target > 240) target = target - 30;
+
+            // Плавная анимация счётчика
+            const animateStep = () => {
+                const diff = target - current;
+                if (Math.abs(diff) < 1) {
+                    current = target;
+                    onlineEl.textContent = current;
+                    return;
+                }
+                // Движение с ускорением
+                const step = diff * 0.12 + (diff > 0 ? 0.5 : -0.5);
+                current = Math.round(current + step);
+                onlineEl.textContent = current;
+                requestAnimationFrame(animateStep);
+            };
+            animateStep();
+        }
+
+        // Первое обновление сразу
+        setTimeout(updateOnline, 300);
+        // И дальше каждые 4 секунды
+        setInterval(updateOnline, 4000);
+
+        // ------------------------------------------------
+        // 2. КОПИРОВАНИЕ КЛЮЧА
+        // ------------------------------------------------
+        const copyBtn = document.getElementById('copyKeyBtn');
+        const vpnKey = document.getElementById('vpnKey');
+
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(vpnKey.textContent);
+                copyBtn.textContent = '✅ Скопировано!';
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 Копировать';
+                    copyBtn.classList.remove('copied');
+                }, 2500);
+            } catch {
+                // fallback для старых браузеров
+                const range = document.createRange();
+                range.selectNode(vpnKey);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                copyBtn.textContent = '✅ Скопировано!';
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 Копировать';
+                }, 2500);
+            }
+        });
+
+        // ------------------------------------------------
+        // 3. ОБРАБОТКА ФОРМЫ (имитация отправки)
+        // ------------------------------------------------
+        const form = document.getElementById('subscribeForm');
+        const emailInput = document.getElementById('emailInput');
+        const successMsg = document.getElementById('successMsg');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const email = emailInput.value.trim();
+            if (!email) {
+                alert('Пожалуйста, введите email');
+                return;
+            }
+
+            // Простейшая валидация
+            if (!email.includes('@') || !email.includes('.')) {
+                alert('Введите корректный email (пример: user@domain.com)');
+                return;
+            }
+
+            // Показываем сообщение об успехе
+            successMsg.classList.add('show');
+            // Сбрасываем поле
+            emailInput.value = '';
+
+            // Через 6 секунд скрываем сообщение
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 6000);
+
+            // Здесь можно отправить данные на сервер (fetch / axios)
+            console.log('Email отправлен:', email);
+            // В реальном проекте: fetch('/api/subscribe', { method: 'POST', body: JSON.stringify({ email }) })
+        });
+
+        // ------------------------------------------------
+        // 4. ДОПОЛНИТЕЛЬНО: при клике на кнопку "Получить доступ"
+        //    срабатывает отправка формы (уже есть выше)
+        // ------------------------------------------------
+    </script>
+
+</body>
+</html>
