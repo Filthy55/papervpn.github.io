@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой ИИ-Ассистент</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 700px;
+            height: 90vh;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .message {
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 80%;
+            line-height: 1.4;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        .message.user {
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .message.ai {
+            background-color: #e9ecef;
+            color: #212529;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+        }
+        #user-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 20px;
+            font-size: 1em;
+            outline: none;
+        }
+        #send-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s;
+        }
+        #send-button:hover { background-color: #0056b3; }
+        #send-button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .message.ai img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">Мой ИИ-Ассистент</div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-area">
+            <input type="text" id="user-input" placeholder="Спросите что-нибудь или попросите нарисовать..." autocomplete="off">
+            <button id="send-button">Отправить</button>
+        </div>
+    </div>
+
+    <!-- Подключаем Puter.js -->
+    <script src="https://js.puter.com/v2/"></script>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+
+        // Добавить текстовое сообщение. Возвращает созданный элемент.
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return messageDiv;
+        }
+
+        // Добавить изображение
+        function addImage(imageUrl) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', 'ai');
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = "Сгенерированное изображение";
+            messageDiv.appendChild(img);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Проверка, что Puter загрузился
+        function isPuterReady() {
+            return typeof puter !== 'undefined' && puter.ai && typeof puter.ai.chat === 'function';
+        }
+
+        // Извлечь текст ответа из разных форматов, которые может вернуть Puter
+        function extractText(response) {
+            if (!response) return 'Пустой ответ от модели.';
+            if (typeof response === 'string') return response;
+            if (response.message) {
+                if (typeof response.message.content === 'string') return response.message.content;
+                if (Array.isArray(response.message.content)) {
+                    return response.message.content
+                        .map(part => (typeof part === 'string' ? part : part.text || ''))
+                        .join('\n');
+                }
+            }
+            if (typeof response.text === 'string') return response.text;
+            try { return JSON.stringify(response, null, 2); } catch (e) { return String(response); }
+        }
+
+        async function sendMessage() {
+            const prompt = userInput.value.trim();
+            if (!prompt) return;
+
+            addMessage(prompt, 'user');
+            userInput.value = '';
+            userInput.disabled = true;
+            sendButton.disabled = true;
+
+            const thinkingMsg = addMessage('Думаю...', 'ai');
+
+            try {
+                if (!isPuterReady()) {
+                    throw new Error('Библиотека Puter.js не загрузилась. Проверьте интернет и отключите блокировщик рекламы (AdBlock).');
+                }
+
+                const lowerPrompt = prompt.toLowerCase();
+                const wantsImage = lowerPrompt.includes('нарисуй') ||
+                                   lowerPrompt.includes('сгенерируй картинку') ||
+                                   lowerPrompt.includes('сгенерируй изображение') ||
+                                   lowerPrompt.includes('создай изображение') ||
+                                   lowerPrompt.includes('создай картинку');
+
+                if (wantsImage) {
+                    thinkingMsg.textContent = 'Генерирую изображение...';
+                    const image = await puter.ai.txt2img(prompt);
+                    thinkingMsg.remove();
+                    if (image && image.src) {
+                        addImage(image.src);
+                    } else {
+                        addMessage('Не удалось получить изображение. Попробуйте переформулировать запрос.', 'error');
+                    }
+                } else {
+                    thinkingMsg.textContent = 'Думаю...';
+
+                    // Пробуем модели по очереди, пока одна не ответит
+                    const models = ['gpt-5-nano', 'gpt-4o-mini', 'claude-sonnet-4', 'gemini-2.0-flash'];
+                    let response = null;
+                    let lastError = null;
+
+                    for (const model of models) {
+                        try {
+                            response = await puter.ai.chat(prompt, { model });
+                            break;
+                        } catch (err) {
+                            console.warn('Модель ' + model + ' не сработала:', err);
+                            lastError = err;
+                        }
+                    }
+
+                    if (!response) {
+                        throw lastError || new Error('Ни одна модель не ответила.');
+                    }
+
+                    thinkingMsg.remove();
+                    addMessage(extractText(response), 'ai');
+                }
+            } catch (error) {
+                console.error('Полная ошибка:', error);
+                if (thinkingMsg.parentNode) thinkingMsg.remove();
+                addMessage('Ошибка: ' + (error.message || 'Не удалось связаться с ИИ. Откройте консоль (F12) для деталей.'), 'error');
+            } finally {
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        addMessage('Привет! Я твой ИИ-ассистент. Могу помочь с кодом, ответить на вопросы или нарисовать картинку. Просто напиши мне!', 'ai');
+    </script>
+</body>
+</html>
